@@ -1,6 +1,8 @@
 ﻿namespace GeneralSQLReporter.Helpers
 {
     using System;
+    using System.Collections.Generic;
+    using System.Data;
     using System.Data.Common;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
@@ -79,26 +81,49 @@
                 var command = SqlRepository._conn.CreateCommand();
                 command.CommandText = report.Query;
 
+                using (var schemaOnlyReader = command.ExecuteReader(CommandBehavior.SchemaOnly))
+                {
+                    var schema = schemaOnlyReader.GetSchemaTable();
+                    var rows = schema.Rows;
+
+                    var colIndex = 0;
+                    foreach (DataRow col in rows)
+                    {
+                        var name = col.Field<string>("ColumnName");
+
+                        resultSet.Columns.Add(new SqlColumn
+                        {
+                            Index = colIndex,
+                            Name = name
+                        });
+
+                        colIndex++;
+                    }
+                }
+
                 using (var reader = command.ExecuteReader())
                 {
                     resultSet.ReportUsed = report;
-                    resultSet.Columns = reader.GetColumnSchema();
 
                     var rowIndex = 0;
 
                     while (reader.Read())
                     {
+                        var sqlRow = new SqlRow(rowIndex);
+
                         for (var i = 0; i < reader.FieldCount; i++)
                         {
-                            resultSet.Rows.Add(new SqlRow
+                            sqlRow.Values.Add(new SqlRowValue
                             {
                                 ColumnIndex = i,
                                 Value = reader.GetValue(i),
+                                DataType = reader.GetFieldType(i),
                                 RowNumber = rowIndex
                             });
-
-                            rowIndex++;
                         }
+
+                        resultSet.Rows.Add(sqlRow);
+                        rowIndex++;
                     }
                 }
 
@@ -133,26 +158,49 @@
                 var command = SqlRepository._conn.CreateCommand();
                 command.CommandText = report.Query;
 
+                using (var schemaOnlyReader = command.ExecuteReader(CommandBehavior.SchemaOnly))
+                {
+                    var schema = schemaOnlyReader.GetSchemaTable();
+                    var rows = schema.Rows;
+
+                    var colIndex = 0;
+                    foreach (DataRow col in rows)
+                    {
+                        var name = col.Field<string>("ColumnName");
+
+                        resultSet.Columns.Add(new SqlColumn
+                        {
+                            Index = colIndex,
+                            Name = name
+                        });
+
+                        colIndex++;
+                    }
+                }
+
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     resultSet.ReportUsed = report;
-                    resultSet.Columns = reader.GetColumnSchema();
 
                     var rowIndex = 0;
 
                     while (await reader.ReadAsync())
                     {
+                        var sqlRow = new SqlRow(rowIndex);
+
                         for (var i = 0; i < reader.FieldCount; i++)
                         {
-                            resultSet.Rows.Add(new SqlRow
+                            sqlRow.Values.Add(new SqlRowValue
                             {
                                 ColumnIndex = i,
                                 Value = reader.GetValue(i),
+                                DataType = reader.GetFieldType(i),
                                 RowNumber = rowIndex
                             });
-
-                            rowIndex++;
                         }
+
+                        resultSet.Rows.Add(sqlRow);
+                        rowIndex++;
                     }
                 }
 
