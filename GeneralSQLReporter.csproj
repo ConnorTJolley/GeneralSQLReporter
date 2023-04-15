@@ -49,6 +49,7 @@
     <Compile Include="Helpers\GeneralExtensions.cs" />
     <Compile Include="Helpers\SmtpEmailSender.cs" />
     <Compile Include="Helpers\SqlConnectionExtensions.cs" />
+    <Compile Include="Helpers\SqlReportExporter.cs" />
     <Compile Include="Helpers\SqlReportExtensions.cs" />
     <Compile Include="Helpers\SqlRepository.cs" />
     <Compile Include="Helpers\StoredProcedureReportExtensions.cs" />

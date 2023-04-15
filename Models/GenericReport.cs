@@ -33,7 +33,7 @@
         /// <summary>
         /// Gets the <see cref="List{SqlParameter}"/>'s for the Stored Procedure Report
         /// </summary>
-        public List<SqlParameter> Parameters { get; internal set; }
+        public List<SqlParameter> Parameters { get; internal set; } = new List<SqlParameter>();
 
         /// <summary>
         /// The List of Email Addresses that will recieve the Result of the Report via Email over SMTP.

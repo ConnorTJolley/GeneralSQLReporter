@@ -99,7 +99,9 @@
 
             if (parameters.Any())
             {
-                msg += $"{parameters.Count} Parameters:{Environment.NewLine}-----";
+                msg += $"{parameters.Count} Parameters:{Environment.NewLine}" +
+                    "-----" +
+                    $"{Environment.NewLine}";
 
                 parameters.ForEach(p =>
                 {

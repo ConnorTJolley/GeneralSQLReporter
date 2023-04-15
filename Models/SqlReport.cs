@@ -9,7 +9,7 @@
     /// </summary>
     /// <remarks>
     /// Contains Properties and various constructors for the <see cref="SqlReport"/> class which is used when calling
-    /// <see cref="SqlRepository.RunSingleReport(SqlReport)"/> or <see cref="SqlRepository.RunSingleReportAsync(SqlReport)"/>
+    /// <see cref="SqlRepository.RunSingleReport(GenericReport)"/> or <see cref="SqlRepository.RunSingleReportAsync(GenericReport)"/>
     /// </remarks>
     public class SqlReport : GenericReport
     {
