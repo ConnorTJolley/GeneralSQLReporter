@@ -7,10 +7,10 @@
     using GeneralSQLReporter.Models;
 
     /// <summary>
-    /// Static Helper for Creating and Sending Emails via SMTP to Recipients on <see cref="SqlReport.EmailRecipients"/>
+    /// Static Helper for Creating and Sending Emails via SMTP to Recipients on <see cref="GenericReport.EmailRecipients"/>
     /// </summary>
     /// <remarks>
-    /// If the <see cref="SqlReport.EmailRecipients"/> is not empty but the <see cref="SmtpEmailSender"/> has NOT
+    /// If the <see cref="GenericReport.EmailRecipients"/> is not empty but the <see cref="SmtpEmailSender"/> has NOT
     /// been configured, an <see cref="ArgumentException"/> will be thrown for an Invalid <see cref="SqlReport"/>
     /// </remarks>
     public static class SmtpEmailSender
@@ -18,7 +18,11 @@
         /// <summary>
         /// Private instance of the <see cref="SmtpClient"/>.
         /// </summary>
-        private static SmtpClient _smtpClient;
+        private static readonly SmtpClient _smtpClient;
+
+        /// <summary>
+        /// Private storage field for the From Email Address
+        /// </summary>
         private static string _fromAddress;
 
         /// <summary>
@@ -29,7 +33,15 @@
             SmtpEmailSender._smtpClient = new SmtpClient();
         }
 
-        public static bool Setup(string host, int port, NetworkCredential credentials, string fromAddress)
+        /// <summary>
+        /// Handles the Setting Up of the <see cref="SmtpEmailSender"/> and validating that the backing <see cref="SmtpClient"/> is setup
+        /// </summary>
+        /// <param name="host">The SMTP host address, e.g smtp.gmail.com</param>
+        /// <param name="credentials">The <see cref="NetworkCredential"/> for the SMTP Authentication</param>
+        /// <param name="fromAddress">The Email Address to send the Emails As, e.g noreplay@address.com</param>
+        /// <param name="port">The SMTP port, e.g 587 (defaults to 25)</param>
+        /// <returns>True if Setup, False if not</returns>
+        public static bool Setup(string host, NetworkCredential credentials, string fromAddress, int port = 25)
         {
             SmtpEmailSender._smtpClient.Host = host;
             SmtpEmailSender._smtpClient.Port = port;
@@ -44,13 +56,13 @@
         /// <summary>
         /// Checks to see whether or not the <see cref="SmtpEmailSender"/> has been configured correctly
         /// </summary>
-        /// <returns><see cref="true"/> if setup. <see cref="false"/> if not</returns>
+        /// <returns>True if setup. False if not</returns>
         /// <remarks>
         /// This is used when checking for a valid <see cref="SqlReport"/> 
-        /// if <see cref="SqlReport.EmailRecipients"/> is NOT empty before running query.
+        /// if <see cref="GenericReport.EmailRecipients"/> is NOT empty before running query.
         /// 
         /// It is advised that this is checked before running any 
-        /// report that has any <see cref="SqlReport.EmailRecipients"/> 
+        /// report that has any <see cref="GenericReport.EmailRecipients"/> 
         /// </remarks>
         public static bool IsSetup()
         {
@@ -86,8 +98,18 @@
             }
         }
 
-        public static bool SendReportResultsToEmails(SqlReport report, ReportResultSet result)
+        /// <summary>
+        /// Handles Sending the <see cref="ReportResultSet"/> to the Recipient(s)
+        /// </summary>
+        /// <param name="result">The resulting <see cref="ReportResultSet"/></param>
+        /// <returns>True if successfully sent to ALL recipients, False if not</returns>
+        /// <exception cref="ArgumentException">
+        /// Throws an <see cref="ArgumentNullException"/> if there are 0 
+        /// Email Recipients Setup on the <see cref="GenericReport"/>
+        /// </exception>
+        public static bool SendReportResultsToEmails(ReportResultSet result)
         {
+            var report = result.ReportUsed;
             if (!report.EmailRecipients.Any())
             {
                 throw new ArgumentException("Email Recipients was empty.");

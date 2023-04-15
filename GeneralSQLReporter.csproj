@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -48,13 +51,19 @@
     <Compile Include="Helpers\SqlConnectionExtensions.cs" />
     <Compile Include="Helpers\SqlReportExtensions.cs" />
     <Compile Include="Helpers\SqlRepository.cs" />
+    <Compile Include="Helpers\StoredProcedureReportExtensions.cs" />
+    <Compile Include="Models\GenericReport.cs" />
     <Compile Include="Models\ReportResultSet.cs" />
+    <Compile Include="Models\ReportType.cs" />
     <Compile Include="Models\SqlColumn.cs" />
     <Compile Include="Models\SqlReport.cs" />
     <Compile Include="Models\SqlRow.cs" />
     <Compile Include="Models\SqlRowValue.cs" />
+    <Compile Include="Models\StoredProcedureReport.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
