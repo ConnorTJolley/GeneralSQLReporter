@@ -83,9 +83,12 @@
             });
 
             //// Remove trailing pipe
-            colString = colString.Trim().Remove(colString.Length - 1, 1).Trim();
+            var trimmedColString = colString.Trim();
+            var lastIndex = trimmedColString.LastIndexOf('|');
+            colString = trimmedColString.Remove(lastIndex, 1).Trim();
+
             baseMsg += $"Columns & Index: {newLine}[{colString}]{newLine}";
-            baseMsg += $"Record Count: {this.Rows.Count:N2}";
+            baseMsg += $"Record Count: {this.Rows.Count:N0}{newLine}";
 
             var typeMsg = repUsed == ReportType.SqlReport ? "Query" : "Stored Procedure";
             baseMsg += $"{typeMsg} Used: {newLine}";

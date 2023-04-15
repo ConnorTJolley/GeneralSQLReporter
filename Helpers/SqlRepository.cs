@@ -90,17 +90,42 @@
         }
 
         /// <summary>
-        /// Runs a Single Report of Type <see cref="StoredProcedureReport"/> For Stored Procedures Sychonrously
+        /// Handles the Running of a <see cref="GenericReport"/> Synchronously
         /// </summary>
-        /// <param name="report">The <see cref="StoredProcedureReport"/> to run</param>
-        /// <returns>The <see cref="ReportResultSet"/></returns>
-        /// <exception cref="ArgumentException">Throws an <see cref="ArgumentException"/> if the Report is not valid.</exception>
+        /// <param name="reportToRun">The <see cref="GenericReport"/> to run</param>
+        /// <returns>The resulting <see cref="ReportResultSet"/></returns>
+        /// <exception cref="ArgumentException">Throws an <see cref="ArgumentException"/> if the <see cref="GenericReport"/> is Invalid</exception>
         /// <exception cref="Exception">Throws an <see cref="Exception"/> if the Connection is not established / setup.</exception>
-        public static ReportResultSet RunSingleReport(StoredProcedureReport report)
+        public static ReportResultSet RunSingleReport(GenericReport reportToRun)
         {
-            if (!report.IsValid())
+            var type = reportToRun is SqlReport ? 
+                ReportType.SqlReport : 
+                ReportType.StoredProcedure;
+
+            var commandText = string.Empty;
+            var commandType = type == ReportType.SqlReport ? 
+                CommandType.Text :
+                CommandType.StoredProcedure;
+
+            if (type is ReportType.SqlReport)
             {
-                throw new ArgumentException(SqlRepository._invalidReportMessage);
+                var report = reportToRun as SqlReport;
+                if (!report.IsValid())
+                {
+                    throw new ArgumentException(SqlRepository._invalidReportMessage);
+                }
+
+                commandText = report.Query;
+            }
+            else
+            {
+                var report = reportToRun as StoredProcedureReport;
+                if (!report.IsValid())
+                {
+                    throw new ArgumentException(SqlRepository._invalidReportMessage);
+                }
+
+                commandText = report.ProcedureName;
             }
 
             if (!SqlRepository._conn.CheckConnection())
@@ -113,11 +138,10 @@
                 SqlRepository.StartStopwatch();
 
                 var resultSet = new ReportResultSet();
-                var query = report.ProcedureName;
                 var command = SqlRepository._conn.CreateCommand();
-                command.CommandText = query;
-                command.CommandType = CommandType.StoredProcedure;
-                command.AddParamsIfRequired(report);
+                command.CommandText = commandText;
+                command.CommandType = commandType;
+                command.AddParamsIfRequired(reportToRun);
 
                 SqlRepository._conn.CheckConnection();
 
@@ -143,7 +167,7 @@
 
                 using (var reader = command.ExecuteReader())
                 {
-                    resultSet.ReportUsed = report;
+                    resultSet.ReportUsed = reportToRun;
 
                     var rowIndex = 0;
 
@@ -183,20 +207,45 @@
         }
 
         /// <summary>
-        /// Runs a Single Report of Type <see cref="StoredProcedureReport"/> For Stored Procedures Asynchronously
+        /// Handles the Running of a <see cref="GenericReport"/> Asynchronously
         /// </summary>
-        /// <param name="report">The <see cref="StoredProcedureReport"/> to run</param>
-        /// <returns>The <see cref="ReportResultSet"/></returns>
-        /// <exception cref="ArgumentException">Throws an <see cref="ArgumentException"/> if the Report is not valid.</exception>
+        /// <param name="reportToRun">The <see cref="GenericReport"/> to run</param>
+        /// <returns>The resulting <see cref="ReportResultSet"/></returns>
+        /// <exception cref="ArgumentException">Throws an <see cref="ArgumentException"/> if the <see cref="GenericReport"/> is Invalid</exception>
         /// <exception cref="Exception">Throws an <see cref="Exception"/> if the Connection is not established / setup.</exception>
-        public static async Task<ReportResultSet> RunSingleReportAsync(StoredProcedureReport report)
+        public static async Task<ReportResultSet> RunSingleReportAsync(GenericReport reportToRun)
         {
-            if (!report.IsValid())
+            var type = reportToRun is SqlReport ?
+                ReportType.SqlReport :
+                ReportType.StoredProcedure;
+
+            var commandText = string.Empty;
+            var commandType = type == ReportType.SqlReport ?
+                CommandType.Text :
+                CommandType.StoredProcedure;
+
+            if (type is ReportType.SqlReport)
             {
-                throw new ArgumentException(SqlRepository._invalidReportMessage);
+                var report = reportToRun as SqlReport;
+                if (!report.IsValid())
+                {
+                    throw new ArgumentException(SqlRepository._invalidReportMessage);
+                }
+
+                commandText = report.Query;
+            }
+            else
+            {
+                var report = reportToRun as StoredProcedureReport;
+                if (!report.IsValid())
+                {
+                    throw new ArgumentException(SqlRepository._invalidReportMessage);
+                }
+
+                commandText = report.ProcedureName;
             }
 
-            if (!SqlRepository._conn.CheckConnection())
+            if (!await SqlRepository._conn.CheckConnectionAsync())
             {
                 throw new Exception(SqlRepository._connectionIssueMessage);
             }
@@ -206,19 +255,10 @@
                 SqlRepository.StartStopwatch();
 
                 var resultSet = new ReportResultSet();
-                var query = report.ProcedureName;
                 var command = SqlRepository._conn.CreateCommand();
-                command.CommandText = query;
-                command.CommandType = CommandType.StoredProcedure;
-                command.AddParamsIfRequired(report);
-
-                if (report.Parameters.Any())
-                {
-                    report.Parameters.ForEach(param =>
-                    {
-                        command.Parameters.Add(param);
-                    });
-                }
+                command.CommandText = commandText;
+                command.CommandType = commandType;
+                command.AddParamsIfRequired(reportToRun);
 
                 await SqlRepository._conn.CheckConnectionAsync();
 
@@ -244,189 +284,11 @@
 
                 using (var reader = await command.ExecuteReaderAsync())
                 {
-                    resultSet.ReportUsed = report;
+                    resultSet.ReportUsed = reportToRun;
 
                     var rowIndex = 0;
 
                     while (reader.Read())
-                    {
-                        var sqlRow = new SqlRow(rowIndex);
-
-                        for (var i = 0; i < reader.FieldCount; i++)
-                        {
-                            sqlRow.Values.Add(new SqlRowValue
-                            {
-                                ColumnIndex = i,
-                                Value = reader.GetValue(i),
-                                DataType = reader.GetFieldType(i),
-                                RowNumber = rowIndex
-                            });
-                        }
-
-                        resultSet.Rows.Add(sqlRow);
-                        rowIndex++;
-                    }
-                }
-
-                command.Dispose();
-
-                SqlRepository._sw.Stop();
-                resultSet.ElapsedTimeInMs = SqlRepository._sw.ElapsedMilliseconds;
-
-                return resultSet;
-            }
-            catch (Exception ex)
-            {
-                SqlRepository._sw.Stop();
-                Console.WriteLine($"Error Running Report. Ex: {ex.Message}");
-                throw ex;
-            }
-        }
-
-        /// <summary>
-        /// Runs a Single Report of Type <see cref="SqlRepository"/> For Query Reports
-        /// </summary>
-        /// <param name="report">The <see cref="SqlRepository"/> to run</param>
-        /// <returns>The <see cref="ReportResultSet"/></returns>
-        /// <exception cref="ArgumentException">Throws an <see cref="ArgumentException"/> if the Report is not valid.</exception>
-        /// <exception cref="Exception">Throws an <see cref="Exception"/> if the Connection is not established / setup.</exception>
-        public static ReportResultSet RunSingleReport(SqlReport report)
-        {
-            if (!report.IsValid())
-            {
-                throw new ArgumentException(SqlRepository._invalidReportMessage);
-            }
-
-            if (!SqlRepository._conn.CheckConnection())
-            {
-                throw new Exception(SqlRepository._connectionIssueMessage);
-            }
-
-            try
-            {
-                SqlRepository.StartStopwatch();
-
-                var resultSet = new ReportResultSet();
-                var command = SqlRepository._conn.CreateCommand();
-                command.CommandText = report.Query;
-                command.AddParamsIfRequired(report);
-
-                using (var schemaOnlyReader = command.ExecuteReader(CommandBehavior.SchemaOnly))
-                {
-                    var schema = schemaOnlyReader.GetSchemaTable();
-                    var rows = schema.Rows;
-
-                    var colIndex = 0;
-                    foreach (DataRow col in rows)
-                    {
-                        var name = col.Field<string>("ColumnName");
-
-                        resultSet.Columns.Add(new SqlColumn
-                        {
-                            Index = colIndex,
-                            Name = name
-                        });
-
-                        colIndex++;
-                    }
-                }
-
-                using (var reader = command.ExecuteReader())
-                {
-                    resultSet.ReportUsed = report;
-
-                    var rowIndex = 0;
-
-                    while (reader.Read())
-                    {
-                        var sqlRow = new SqlRow(rowIndex);
-
-                        for (var i = 0; i < reader.FieldCount; i++)
-                        {
-                            sqlRow.Values.Add(new SqlRowValue
-                            {
-                                ColumnIndex = i,
-                                Value = reader.GetValue(i),
-                                DataType = reader.GetFieldType(i),
-                                RowNumber = rowIndex
-                            });
-                        }
-
-                        resultSet.Rows.Add(sqlRow);
-                        rowIndex++;
-                    }
-                }
-
-                command.Dispose();
-
-                SqlRepository._sw.Stop();
-                resultSet.ElapsedTimeInMs = SqlRepository._sw.ElapsedMilliseconds;
-
-                return resultSet;
-            }
-            catch (Exception ex)
-            {
-                SqlRepository._sw.Stop();
-                Console.WriteLine($"Error Running Report. Ex: {ex.Message}");
-                throw ex;
-            }
-        }
-
-        /// <summary>
-        /// Runs a Single Report of Type <see cref="SqlRepository"/> For Query Reports Asynchronously
-        /// </summary>
-        /// <param name="report">The <see cref="SqlRepository"/> to run</param>
-        /// <returns>The <see cref="ReportResultSet"/></returns>
-        /// <exception cref="ArgumentException">Throws an <see cref="ArgumentException"/> if the Report is not valid.</exception>
-        /// <exception cref="Exception">Throws an <see cref="Exception"/> if the Connection is not established / setup.</exception>
-        public static async Task<ReportResultSet> RunSingleReportAsync(SqlReport report)
-        {
-            if (!report.IsValid())
-            {
-                throw new ArgumentException(SqlRepository._invalidReportMessage);
-            }
-
-            if (!await SqlRepository._conn.CheckConnectionAsync())
-            {
-                throw new Exception(SqlRepository._connectionIssueMessage);
-            }
-
-            try
-            {
-                SqlRepository.StartStopwatch();
-
-                var resultSet = new ReportResultSet();
-                var command = SqlRepository._conn.CreateCommand();
-                command.CommandText = report.Query;
-                command.AddParamsIfRequired(report);
-
-                using (var schemaOnlyReader = command.ExecuteReader(CommandBehavior.SchemaOnly))
-                {
-                    var schema = schemaOnlyReader.GetSchemaTable();
-                    var rows = schema.Rows;
-
-                    var colIndex = 0;
-                    foreach (DataRow col in rows)
-                    {
-                        var name = col.Field<string>("ColumnName");
-
-                        resultSet.Columns.Add(new SqlColumn
-                        {
-                            Index = colIndex,
-                            Name = name
-                        });
-
-                        colIndex++;
-                    }
-                }
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    resultSet.ReportUsed = report;
-
-                    var rowIndex = 0;
-
-                    while (await reader.ReadAsync())
                     {
                         var sqlRow = new SqlRow(rowIndex);
 
