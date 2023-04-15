@@ -20,7 +20,7 @@
         /// <summary>
         /// Instance of the Invalid Report Error Message
         /// </summary>
-        private static readonly string _invalidReportMessage = "Report is Invalid, please chell all required values are set " +
+        private static readonly string _invalidReportMessage = "Report is Invalid, please check all required values are set " +
                     "and that SmtpEmailSender is configured if required.";
 
         /// <summary>
