@@ -5,6 +5,12 @@
     using System.Data;
     using System.Threading.Tasks;
 
+    /// <summary>
+    /// Extension Methods for the <see cref="SqlConnection"/> Class
+    /// </summary>
+    /// <remarks>
+    /// Used to Easily Check the Connection of a <see cref="SqlConnection"/> both Synchronously and Asynchronously
+    /// </remarks>
     public static class SqlConnectionExtensions
     {
         /// <summary>
