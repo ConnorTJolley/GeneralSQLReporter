@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data.SqlClient;
+    using GeneralSQLReporter.Enums;
     using GeneralSQLReporter.Helpers;
     using Newtonsoft.Json;
 
