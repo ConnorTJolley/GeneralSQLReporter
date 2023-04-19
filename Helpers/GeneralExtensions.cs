@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Data;
     using System.Data.SqlClient;
     using System.Linq;
     using System.Net.Mail;
@@ -15,6 +16,65 @@
     /// </remarks>
     public static class GeneralExtensions
     {
+        /// <summary>
+        /// Handles Converting a <see cref="SqlParameter"/> into it's SQL Declarative value
+        /// </summary>
+        /// <param name="parameter">The <see cref="SqlParameter"/> to Convert</param>
+        /// <returns>The Resulting SQL Declarative Value, e.g nvarchar 'VALUE', int 0</returns>
+        internal static string ToQueryString(this SqlParameter parameter)
+        {
+            switch (parameter.DbType)
+            {
+                case DbType.String:
+                case DbType.Binary:
+                case DbType.Date:
+                case DbType.Time:
+                case DbType.DateTime2:
+                case DbType.DateTimeOffset:
+                case DbType.Xml:
+                case DbType.Guid:
+                    return $"'{parameter.Value}'";
+
+                default:
+                    return parameter.Value.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Handles Converting the <see cref="List{SqlParameter}"/> into SQL Variables / Params
+        /// </summary>
+        /// <param name="parameters">The <see cref="List{SqlParameter}"/> to Convert.</param>
+        /// <returns>The Resulting SQL Variable Declaration and Assignment.</returns>
+        public static string ToSqlParams(this List<SqlParameter> parameters)
+        {
+            var result = $"-- Parameters{Environment.NewLine}DECLARE ";
+
+            if (!parameters.Any())
+            {
+                return $"-- No Parameters Used.{Environment.NewLine}";
+            }
+
+            parameters.ForEach(param =>
+            {
+                var upperType = param.SqlDbType.ToString().ToUpper();
+                result += $"{param.ParameterName} {upperType}, ";
+            });
+
+            //// Remove trailing comma
+            var trimmed = result.Trim();
+            result = trimmed.Trim().Remove(trimmed.Length - 1);
+            result += $";{Environment.NewLine}";
+
+            parameters.ForEach(param =>
+            {
+                var typeValue = param.ToQueryString();
+                result += $"SET {param.ParameterName} = {typeValue};{Environment.NewLine}";
+            });
+
+            result += $"-- End of Parameters{Environment.NewLine + Environment.NewLine}";
+            return result;
+        }
+
         /// <summary>
         /// Handles the Adding of <see cref="SqlParameter"/>s to the <see cref="SqlCommand"/> if the <see cref="GenericReport"/> has them
         /// </summary>
