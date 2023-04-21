@@ -46,6 +46,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Enums\ReportFormat.cs" />
+    <Compile Include="Helpers\Exporters\CsvExporter.cs" />
+    <Compile Include="Helpers\Exporters\HtmlExporter.cs" />
     <Compile Include="Helpers\GeneralExtensions.cs" />
     <Compile Include="Helpers\SmtpEmailSender.cs" />
     <Compile Include="Helpers\SqlConnectionExtensions.cs" />
