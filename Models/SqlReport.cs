@@ -24,7 +24,7 @@
         /// <see cref="SqlRepository"/> helper class to execute and report SQL Queries.
         /// </summary>
         /// <param name="query">The SQL Query to run</param>
-        /// <param name="format">The desired Output <see cref="ReportFormat"/>, defaults to <see cref="ReportFormat.ExcelXls"/></param>
+        /// <param name="format">The desired Output <see cref="ReportFormat"/>, defaults to <see cref="ReportFormat.Html"/></param>
         /// <param name="saveToDisk">True/False for whether to save the output to Disk and Keep it, defaults to False</param>
         /// <remarks>
         /// Bare-bones Initializer for the <see cref="SqlReport"/>, this is best used 
@@ -33,7 +33,7 @@
         /// E.g a user clicks a Report button within an App / Website, run the query, store the Report or not and 
         /// process the output however required.
         /// </remarks>
-        public SqlReport(string query, ReportFormat format = ReportFormat.ExcelXls, bool saveToDisk = false)
+        public SqlReport(string query, ReportFormat format = ReportFormat.Html, bool saveToDisk = false)
         {
             this.Query = query;
             this.OutputFormat = format;
@@ -47,7 +47,7 @@
         /// <see cref="SqlRepository"/> helper class to execute and report SQL Queries.
         /// </summary>
         /// <param name="query">The SQL Query to run</param>
-        /// <param name="format">The desired Output <see cref="ReportFormat"/>, defaults to <see cref="ReportFormat.ExcelXls"/></param>
+        /// <param name="format">The desired Output <see cref="ReportFormat"/>, defaults to <see cref="ReportFormat.Html"/></param>
         /// <param name="emailRecipients">
         /// The List of Email Addresses to send the Report to, 
         /// if populated <see cref="SmtpEmailSender"/> needs to be Configured.
@@ -59,7 +59,9 @@
             bool saveToDisk = false)
         {
             this.Query = query;
-            this.OutputFormat = format;
+            this.OutputFormat = format == ReportFormat.NotSet ? 
+                ReportFormat.Html : 
+                format;
             this.SaveToLocalDisk = saveToDisk;
             this.EmailRecipients = emailRecipients;
         }

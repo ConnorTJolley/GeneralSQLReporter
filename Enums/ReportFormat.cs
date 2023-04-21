@@ -23,18 +23,13 @@
         ExcelXlsx = 1,
 
         /// <summary>
-        /// Output Format in Excel in an .xls File
-        /// </summary>
-        ExcelXls = 2,
-
-        /// <summary>
         /// Output Format in an .csv file
         /// </summary>
-        Csv = 3,
+        Csv = 2,
 
         /// <summary>
         /// Output Format in an .pdf file
         /// </summary>
-        Pdf = 4
+        Pdf = 3
     }
 }
