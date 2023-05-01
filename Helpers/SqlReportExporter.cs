@@ -6,6 +6,7 @@
     using GeneralSQLReporter.Enums;
     using GeneralSQLReporter.Helpers.Exporters;
     using GeneralSQLReporter.Models;
+    using Spire.Xls;
 
     /// <summary>
     /// Interaction Logic for the Helper class <see cref="SqlReportExporter"/>
@@ -119,18 +120,72 @@
             char delimeter = ',') =>
                 CsvExporter.ExportCsv(report, includeColumns, overwrite, fileName, delimeter);
 
-        private static string ExportPdf(ReportResultSet report, 
-            string templatePath = null, 
-            bool overwrite = false)
+        /// <summary>
+        /// Exports the <see cref="ReportResultSet"/> into an PDF Format using 
+        /// <see cref="SqlReportExporter.ExportExcel(ReportResultSet, string, bool, string, int, int, int, int, bool)"/> heavily
+        /// </summary>
+        /// <param name="report">The <see cref="ReportResultSet"/> to export</param>
+        /// <param name="templatePath">The FilePath to a Template Excel file to use if applicable, if left empty will default to the Included Template</param>
+        /// <param name="overwrite">Value to indicate whether to overwrite any existing file(s)</param>
+        /// <param name="fileName">The Name of the file to save as, e.g report.xlsx, if left empty will generate a GUID filename</param>
+        /// <param name="sheetNumber">The Index for the Sheet to use, defaults to 0 (first sheet) if left empty</param>
+        /// <param name="headerRow">The Index for the Header Row, defaults to 1 if left empty</param>
+        /// <param name="firstRow">The Index of the First Row for the record, defaults to 2 if left empty</param>
+        /// <param name="firstCol">The Index of the FIrst Column for the headers/cell values, defaults to 1 if left empty</param>
+        /// <param name="autofitCols">Value to indicate whether to autofit columns or not for the report.</param>
+        /// <returns>The File Path for the Generated PDF Document</returns>
+        public static string ExportPdf(ReportResultSet report,
+            string templatePath = null,
+            bool overwrite = true,
+            string fileName = null,
+            int sheetNumber = 0,
+            int headerRow = 1,
+            int firstRow = 2,
+            int firstCol = 1,
+            bool autofitCols = true)
         {
             SqlReportExporter.CheckExportFolder();
 
-            throw new NotImplementedException();
+            var workbook = XlsxExporter.GenerateWorkbook(report, 
+                templatePath, 
+                sheetNumber, 
+                headerRow, 
+                firstRow, 
+                firstCol, 
+                autofitCols);
+
+            var fullPath = string.IsNullOrWhiteSpace(fileName?.Trim()) ?
+                Path.Combine(SqlReportExporter.OutputDirectory(), $"{Guid.NewGuid()}.pdf") :
+                Path.Combine(SqlReportExporter.OutputDirectory(), fileName);
+
+            if (File.Exists(fullPath) && overwrite)
+            {
+                File.Delete(fullPath);
+            }
+
+            workbook.ConverterSetting.SheetFitToPage = true;
+
+            workbook.SaveToFile(fullPath, FileFormat.PDF);
+
+            return fullPath;
         }
 
+        /// <summary>
+        /// Exports the <see cref="ReportResultSet"/> into an XLSX Excel Format
+        /// </summary>
+        /// <param name="report">The <see cref="ReportResultSet"/> to export</param>
+        /// <param name="templatePath">The FilePath to a Template Excel file to use if applicable, if left empty will default to the Included Template</param>
+        /// <param name="overwrite">Value to indicate whether to overwrite any existing file(s)</param>
+        /// <param name="fileName">The Name of the file to save as, e.g report.xlsx, if left empty will generate a GUID filename</param>
+        /// <param name="sheetNumber">The Index for the Sheet to use, defaults to 0 (first sheet) if left empty</param>
+        /// <param name="headerRow">The Index for the Header Row, defaults to 1 if left empty</param>
+        /// <param name="firstRow">The Index of the First Row for the record, defaults to 2 if left empty</param>
+        /// <param name="firstCol">The Index of the FIrst Column for the headers/cell values, defaults to 1 if left empty</param>
+        /// <param name="autofitCols">Value to indicate whether to autofit columns or not for the report.</param>
+        /// <returns>The File Path for the Generated Excel Document</returns>
         public static string ExportExcel(ReportResultSet report,
             string templatePath = null,
-            bool overwrite = false,
+            bool overwrite = true,
             string fileName = null,
             int sheetNumber = 0,
             int headerRow = 1,
