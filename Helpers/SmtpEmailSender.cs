@@ -4,6 +4,8 @@
     using System.Linq;
     using System.Net;
     using System.Net.Mail;
+    using System.Threading.Tasks;
+    using GeneralSQLReporter.Enums;
     using GeneralSQLReporter.Models;
 
     /// <summary>
@@ -18,7 +20,7 @@
         /// <summary>
         /// Private instance of the <see cref="SmtpClient"/>.
         /// </summary>
-        private static readonly SmtpClient _smtpClient;
+        private static SmtpClient _smtpClient;
 
         /// <summary>
         /// Private storage field for the From Email Address
@@ -26,28 +28,29 @@
         private static string _fromAddress;
 
         /// <summary>
-        /// Initializes the static instance of the <see cref="SmtpEmailSender"/> with an empty <see cref="SmtpClient"/>
-        /// </summary>
-        static SmtpEmailSender()
-        {
-            SmtpEmailSender._smtpClient = new SmtpClient();
-        }
-
-        /// <summary>
         /// Handles the Setting Up of the <see cref="SmtpEmailSender"/> and validating that the backing <see cref="SmtpClient"/> is setup
         /// </summary>
         /// <param name="host">The SMTP host address, e.g smtp.gmail.com</param>
         /// <param name="credentials">The <see cref="NetworkCredential"/> for the SMTP Authentication</param>
         /// <param name="fromAddress">The Email Address to send the Emails As, e.g noreplay@address.com</param>
-        /// <param name="port">The SMTP port, e.g 587 (defaults to 25)</param>
+        /// <param name="port">The SMTP port, e.g 587 (defaults to 465)</param>
+        /// <param name="requiresSsl">Value indicating if the SMTP requires SSL or not, defaults to True</param>
         /// <returns>True if Setup, False if not</returns>
-        public static bool Setup(string host, NetworkCredential credentials, string fromAddress, int port = 25)
+        public static bool Setup(string host, 
+            NetworkCredential credentials,
+            string fromAddress,
+            int port = 465, 
+            bool requiresSsl = true)
         {
-            SmtpEmailSender._smtpClient.Host = host;
-            SmtpEmailSender._smtpClient.Port = port;
-            SmtpEmailSender._smtpClient.UseDefaultCredentials = false;
-            SmtpEmailSender._fromAddress = fromAddress.Trim();
+            SmtpEmailSender._smtpClient = new SmtpClient
+            {
+                Host = host,
+                Port = port,
+                EnableSsl = requiresSsl,
+                UseDefaultCredentials = false
+            };
 
+            SmtpEmailSender._fromAddress = fromAddress;
             SmtpEmailSender._smtpClient.Credentials = credentials;
 
             return SmtpEmailSender.IsSetup();
@@ -99,15 +102,23 @@
         }
 
         /// <summary>
-        /// Handles Sending the <see cref="ReportResultSet"/> to the Recipient(s)
+        /// Handles Sending the <see cref="ReportResultSet"/> to the Recipient(s) Asynchronously
         /// </summary>
         /// <param name="result">The resulting <see cref="ReportResultSet"/></param>
+        /// <param name="subject">The Subject for the Email</param>
+        /// <param name="body">The Body for the Email</param>
+        /// <param name="isBodyHtml">Value to indicate whether the Body is HTML or not, defaults to True</param>
+        /// <param name="filePath">The Path to the Generated Report, if left Empty, it will generate the report itself</param>
         /// <returns>True if successfully sent to ALL recipients, False if not</returns>
         /// <exception cref="ArgumentException">
         /// Throws an <see cref="ArgumentNullException"/> if there are 0 
         /// Email Recipients Setup on the <see cref="GenericReport"/>
         /// </exception>
-        public static bool SendReportResultsToEmails(ReportResultSet result)
+        public static async Task<bool> SendReportResultsToEmailsAsync(ReportResultSet result,
+            string subject,
+            string body,
+            bool isBodyHtml = true,
+            string filePath = null)
         {
             var report = result.ReportUsed;
             if (!report.EmailRecipients.Any())
@@ -119,19 +130,129 @@
 
             try
             {
-                ////TODO Get the report output
+                filePath = SmtpEmailSender.HandleFilePath(filePath, result);
+                var fileName = filePath.Substring(filePath.LastIndexOf('\\') + 1);
 
-                var subject = $"Report Results - {DateTime.Now.ToShortDateString()}";
-                var body = $"A report has been generated and attached to this email for your viewing.";
+                var attachment = new Attachment(filePath)
+                {
+                    Name = fileName
+                };
+
+                foreach (var recipient in  report.EmailRecipients)
+                {
+                    var mailMessage = new MailMessage(SmtpEmailSender._fromAddress,
+                        recipient,
+                        subject,
+                        body)
+                    {
+                        IsBodyHtml = isBodyHtml
+                    };
+
+                    //// Add attachment for the report
+                    mailMessage.Attachments.Add(attachment);
+
+                    await SmtpEmailSender._smtpClient.SendMailAsync(mailMessage);
+                    successCount++;
+                }
+
+                return successCount == report.EmailRecipients.Count;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// Handles Ensuring there is an Attachment to Report
+        /// </summary>
+        /// <param name="filePath">The path to the Pre-Existing file which can be left empty / null</param>
+        /// <param name="result">The <see cref="ReportResultSet"/> which will be used to generate the output 
+        /// if <paramref name="filePath"/> is left empty.</param>
+        /// <returns>The Path to the generated output File</returns>
+        /// <exception cref="Exception">Throws an <see cref="Exception"/> if the <see cref="ReportFormat"/> is 
+        /// set to <see cref="ReportFormat.NotSet"/></exception>
+        private static string HandleFilePath(string filePath, ReportResultSet result)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                //// No pre-generated attachment, need generate and use
+                var type = result.ReportUsed.OutputFormat;
+                switch (type)
+                {
+                    case ReportFormat.Html:
+                        filePath = SqlReportExporter.ExportHtml(result);
+                        break;
+
+                    case ReportFormat.Csv:
+                        filePath = SqlReportExporter.ExportCsv(result);
+                        break;
+
+                    case ReportFormat.ExcelXlsx:
+                        //filePath = SqlReportExporter.ExportHtml(result);
+                        break;
+
+                    case ReportFormat.Pdf:
+                        //filePath = SqlReportExporter.ExportHtml(result);
+                        break;
+
+                    case ReportFormat.NotSet:
+                        throw new Exception("Report Output Format was 'NotSet'");
+                }
+            }
+
+            return filePath;
+        }
+
+        /// <summary>
+        /// Handles Sending the <see cref="ReportResultSet"/> to the Recipient(s) Synchronously
+        /// </summary>
+        /// <param name="result">The resulting <see cref="ReportResultSet"/></param>
+        /// <param name="subject">The Subject for the Email</param>
+        /// <param name="body">The Body for the Email</param>
+        /// <param name="isBodyHtml">Value to indicate whether the Body is HTML or not, defaults to True</param>
+        /// <param name="filePath">The Path to the Generated Report, if left Empty, it will generate the report itself</param>
+        /// <returns>True if successfully sent to ALL recipients, False if not</returns>
+        /// <exception cref="ArgumentException">
+        /// Throws an <see cref="ArgumentNullException"/> if there are 0 
+        /// Email Recipients Setup on the <see cref="GenericReport"/>
+        /// </exception>
+        public static bool SendReportResultsToEmails(ReportResultSet result, 
+            string subject, 
+            string body,
+            bool isBodyHtml = true,
+            string filePath = null)
+        {
+            var report = result.ReportUsed;
+            if (!report.EmailRecipients.Any())
+            {
+                throw new ArgumentException("Email Recipients was empty.");
+            }
+
+            var successCount = 0;
+
+            try
+            {
+                filePath = SmtpEmailSender.HandleFilePath(filePath, result);
+                var fileName = filePath.Substring(filePath.LastIndexOf('\\') + 1);
+
+                var attachment = new Attachment(filePath)
+                {
+                    Name = fileName
+                };
 
                 report.EmailRecipients.ForEach(recipient =>
                 {
                     var mailMessage = new MailMessage(SmtpEmailSender._fromAddress, 
                         recipient, 
                         subject,
-                        body);
+                        body)
+                    {
+                        IsBodyHtml = isBodyHtml
+                    };
 
-                    ////TODO add email attachment
+                    //// Add attachment for the report
+                    mailMessage.Attachments.Add(attachment);
 
                     SmtpEmailSender._smtpClient.Send(mailMessage);
                     successCount++;
