@@ -128,14 +128,23 @@
             throw new NotImplementedException();
         }
 
-        private static string ExportExcel(ReportResultSet report, 
-            ReportFormat format, 
-            string templatePath = null, 
-            bool overwrite = false)
-        {
-            SqlReportExporter.CheckExportFolder();
-
-            throw new NotImplementedException();
-        }
+        public static string ExportExcel(ReportResultSet report,
+            string templatePath = null,
+            bool overwrite = false,
+            string fileName = null,
+            int sheetNumber = 0,
+            int headerRow = 1,
+            int firstRow = 2,
+            int firstCol = 1,
+            bool autofitCols = true) =>
+                XlsxExporter.ExportXlsx(report, 
+                    templatePath, 
+                    overwrite, 
+                    fileName, 
+                    sheetNumber, 
+                    headerRow, 
+                    firstRow, 
+                    firstCol,
+                    autofitCols);
     }
 }
