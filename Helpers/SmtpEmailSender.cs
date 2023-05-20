@@ -189,11 +189,11 @@
                         break;
 
                     case ReportFormat.ExcelXlsx:
-                        //filePath = SqlReportExporter.ExportHtml(result);
+                        filePath = SqlReportExporter.ExportHtml(result);
                         break;
 
                     case ReportFormat.Pdf:
-                        //filePath = SqlReportExporter.ExportHtml(result);
+                        filePath = SqlReportExporter.ExportHtml(result);
                         break;
 
                     case ReportFormat.NotSet:

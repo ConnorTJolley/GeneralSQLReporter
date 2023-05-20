@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+	<readme>README.md</readme>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <!-- <icon>icon.png</icon> -->
+    <projectUrl>https://github.com/ConnorTJolley/GeneralSQLReporter</projectUrl>
+    <description>$description$</description>
+    <releaseNotes>First Release.</releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags>SQL General GeneralSQLReporter Reports Excel XLSX HTML PDF StoredProcedure Stored_Procedure Parameters Parameter Query</tags>
+  </metadata>
+  <files>
+    <file src=".\README.md" target=".\" />
+    </files>
+</package>
