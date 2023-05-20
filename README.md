@@ -1,6 +1,9 @@
 # GeneralSQLReporter
 .dll for General SQL Reporting, provides utilities to run any SELECT query against SQL and generate various outputs
 
+## Acknowledgements
+I acknowledge and thank the creators of `FreeSpire.XLSX` who I used to create the Excel & PDF Reports, their NuGet Package can be found at https://www.nuget.org/packages/FreeSpire.XLS 
+
 ## Setup
 Once the NuGet Package / .dll has been added to your Project, you must Setup the `SqlRepository` by calling `SqlRepository.SetupSqlConnection()` like below:
 ```
@@ -32,8 +35,8 @@ In the example I'll be following from the section `Creating a StoredProcedureRep
 
 There is a helpful `AddParameter` method on both the `SqlReport` and `StoredProcedureReport` base class (`GenericReport`) which handles defining and assigning the parameters with the values you specify like below:
 ```
-storedProcedureReport.AddParameter("@name", SqlDbType.NVarChar, "Suzuki");
-storedProcedureReport.AddParameter("@make", SqlDbType.NVarChar, "Swift");
+storedProcedureReport.AddParameter("@name", SqlDbType.NVarChar, "Audi");
+storedProcedureReport.AddParameter("@make", SqlDbType.NVarChar, "A8");
 ```
 
 Where the first parameter is the `name` of the `SqlParameter`, the second being the `DbType` / Data Type for the parameter and the last parameter being the value you want to assign.
